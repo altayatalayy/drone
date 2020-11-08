@@ -1,0 +1,11 @@
+
+.canvas {
+	position: relative;
+	display: inline-block;
+	width: 500px;
+	height: 500px;
+	min-height: 200px;
+	min-width: 200px;
+	background-color: black;
+}
+

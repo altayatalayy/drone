@@ -1,0 +1,29 @@
+input {
+	border: none;
+	border-radius: 9px;
+}
+
+input[type=text], input[type=password] {
+	width: 70%;
+	padding: 12px 20px;
+	margin: 8px 0px;
+}
+
+input[type=text]:focus, input[type=password]:focus {
+	
+}
+
+input[type=submit] {
+	background-color: #353535;
+	color: white;
+	padding: 12px 20px;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	float: left;
+}
+
+.row {
+	width: 100%
+	display: table;	
+}

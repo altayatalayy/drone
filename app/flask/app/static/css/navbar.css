@@ -1,0 +1,101 @@
+.nav-main {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	height: 6%;
+	background-color: #ecf0f1;
+	display: flex;
+	flex-wrap: wrap;
+	z-index: 1000;
+}
+
+.btn-toggle-nav {
+	width: 60px;
+	height: 100%;
+	background-color: #353535;
+}
+
+.btn-toggle-nav:hover {
+	opacity: 0.5;
+	cursor: pointer;
+}
+
+.btn-hamb {
+	display: block;
+	line-height: 60px;
+	padding: 0 20px;
+	font-family: arial;
+	font-size: 24px;
+	color: #a0a0a0;
+}
+
+.nav-main ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0 0 0 15px;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.nav-main ul li {
+	list-style: none;
+	line-height: 60px;
+	letter-spacing: 3px;
+}
+
+.nav-main ul li a {
+	display: block;
+	height: 100%;
+	padding: 0 10px;
+	text-transform: uppercase;
+	text-decoration: none;
+	color: #2c3e50;
+	font-family: arial;
+	font-size: 2.5ex;
+}
+
+.nav-main ul li a:hover {
+	opacity: 0.5;
+	transition: all 0.1s ease-in-out;
+}
+
+.nav-sidebar {
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	width: 50px;
+	height: calc(100vh - 60px);
+	padding: 0 5px;
+	background-color: #353535;
+	z-index: 1000;
+	transition: all 0.3s ease-in-out;
+}
+
+.nav-sidebar ul {
+	padding: 15px 0 0 0;
+	overflow: hidden;
+	visibility: hidden;
+}
+
+.nav-siderbar ul li {
+	list-style: none;
+}
+
+.nav-sidebar ul li span, .nav-sidebar ul li a {
+	display: block;
+	line-height: 60px;
+	letter-spacing: 3px;
+	padding: 0 10px;
+	text-decoration: none;
+	text-transform: uppercase;
+	color: #ecf0f1;
+	font-family: arial;
+	font-size: 16px;
+	white-space: nowrap;
+	opacity: 0;
+	transition: all 0.3s ease-in-out;
+}
+
+.nav-sidebar ul li a:hover {
+	background-color: #505050;
+}

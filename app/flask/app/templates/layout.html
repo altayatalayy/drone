@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- Ajax 3.x-->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<script src="https://kit.fontawesome.com/d55518f8f8.js" crossorigin="anonymous"></script>
+	
+	<link rel="icon" type='image/x-icon' href='static/images/favicon.ico'>
+	<link rel="stylesheet", href="static/css/main.css">
+	<link rel="stylesheet", href="static/css/navbar.css">
+
+	{% block preample %} {% endblock preample %}
+
+	{% if title %}
+		<title>{{ title }}</title>
+	{% else %}
+		<title>Home</title>
+	{% endif %}
+</head>
+<body>
+	<div class="wrapper">
+	<nav class="nav-main">
+		{% if current_user.is_authenticated %}
+			<div class="btn-toggle-nav" onclick="toggleNav()">
+				<div class="btn-hamb"><i class="fas fa-bars"></i></div>	
+			</div>
+		{% endif %}
+		<ul>	
+			{% if current_user.is_authenticated %}
+				<li><a class="" href="{{ url_for('main.home')}}">Home</a></li>
+				<li><a class="" href="{{ url_for('main.logout')}}">Logout</a></li>
+			{% else %}
+				<li><a class="" href="{{ url_for('main.login')}}">Login</a></li>
+				<li><a class="" href="{{ url_for('main.signup')}}">Signup</a></li>
+			{% endif %}
+		</ul>
+	</nav>
+	
+	{% if current_user.is_authenticated %}
+		<nav class="nav-sidebar">
+			<ul class="list-unstyled components">
+				<li><span>Drone</span></li>
+				<li><a href="#">Tokens</a></li>
+			</ul>
+		</nav>
+	{% endif %}
+	
+	{% with messages = get_flashed_messages(with_categories=true) %}
+		{% if messages %}
+			{% for category, message in messages %}
+				<div class="alert alert-{{ category }}"> {{ message }} </div>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
+
+	<div class="content">
+		{% block content %} {% endblock content%}
+	</div>
+	</div>
+
+	<script src="static/js/main.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+
+
+</body>
+
+	{% block postbody %}{% endblock postbody %}
+</html>
+
