@@ -18,12 +18,13 @@ def create_app():
 
 app, db, bcrypt, login_manager = create_app()
 
-from app.main.routes import main
-from app.apis.data import data
-from app.apis.auth import auth
-app.register_blueprint(main)
-app.register_blueprint(data)
-app.register_blueprint(auth)
+if __name__ == 'app':
+    from app.main.routes import main
+    from app.apis.data import data
+    from app.apis.auth import auth
+    app.register_blueprint(main)
+    app.register_blueprint(data)
+    app.register_blueprint(auth)
 
 
 

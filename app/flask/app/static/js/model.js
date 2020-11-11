@@ -56,9 +56,9 @@ function animate(){
 	Http.onreadystatechange = function(){
 		if(Http.readyState == 4){
 			var a = JSON.parse(Http.responseText).position;
-			x = (a[0] % 360) / 100;
-			y = (a[1] % 360) / 100;
-			z = (a[2] % 360) / 100;
+			x = (a[0] % 360);
+			y = (a[1] % 360);
+			z = (a[2] % 360);
 			object.rotation.set(x, y, z);
 		}
 	}
