@@ -3,6 +3,7 @@
 {% block preample%}
 
 	<link rel="stylesheet", href="static/css/model.css">
+	<link rel="stylesheet", href="static/css/controls.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r122/three.js"></script>
 	<script type="module" src="static/js/model.js"></script>
 {% endblock preample %}
@@ -11,5 +12,13 @@
 
 <div class='canvas' id="canvas"> </div>
 
+<div class='controls'>
+	  <input type="range" min="0" max="100" value="0" class="slider" id="slider1">
+	  <input type="range" min="0" max="100" value="0" class="slider" id="slider2">
+	  <input type="range" min="0" max="100" value="0" class="slider" id="slider3">
+	  <input type="range" min="0" max="100" value="0" class="slider" id="slider4">
+</div>
 
+
+<script  src="static/js/controls.js"></script>
 {% endblock content %}

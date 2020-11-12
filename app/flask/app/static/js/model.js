@@ -50,7 +50,8 @@ function animate(){
 	}, 1000 / 30 );
 
 	var x, y, z;
-	const url = "http://127.0.0.1:5000/api/data/getrotation"
+	const url = "http://192.168.1.25:5000/api/data/getrotation"
+	//const url = "http://127.0.0.1:5000/api/data/getrotation"
 	Http.open("GET", url)
 	Http.send()
 	Http.onreadystatechange = function(){
@@ -62,7 +63,7 @@ function animate(){
 			object.rotation.set(x, y, z);
 		}
 	}
-
+	
 	renderer.render(scene, camera);
 }
 

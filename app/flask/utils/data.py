@@ -59,7 +59,8 @@ class linear(Data):
     ''' stores acc and gyro data'''
     def __init__(self, port='/dev/ttyUSB0', baudrate=19200):
         import serial
-        port = '/dev/cu.usbserial-14330'
+        port = '/dev/ttyUSB0'
+        #port = '/dev/cu.usbserial-14330'
         self.ser = serial.Serial(port, baudrate)
         super().__init__()
 
@@ -72,16 +73,19 @@ class linear(Data):
                 uwsgi.lock()
                 line = self.ser.readline().decode('utf-8')[:-2]#read bytes from serial, last 2 chars = /r/n
             except Exception as e:
-                print(e)
+                #print(e)
+                pass
             finally:
                 uwsgi.unlock()
                 pass
             try:
                 v = parse_ser(line)
             except ValueError as e:
-                print(f'error:{e}\nstr:{line}')
+                #print(f'error:{e}\nstr:{line}')
+                pass
             except Exception as e:
-                print(f'error:{e}\nline{line}')
+                #print(f'error:{e}\nline{line}')
+                pass
             else:
                 self.update_con(v)
 
