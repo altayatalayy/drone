@@ -23,5 +23,5 @@ git pull origin development
 cd ./flask
 python3 -m venv venv
 . venv/bin/activate
-pip install -r reuirements.txt
+pip install -r requirements.txt
 ```
