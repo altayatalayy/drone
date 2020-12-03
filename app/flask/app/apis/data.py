@@ -1,14 +1,9 @@
 from flask import Blueprint, jsonify, request
 from utils.data import linear
-from utils.motors import BLDC
+from utils import motor_list as motors
+from utils import l
 
 data = Blueprint('data', __name__)
-
-l = linear()
-from time import sleep
-sleep(1)
-
-motors = BLDC.from_csv()
 
 @data.route('/api/data/getmotorspeed')
 def get_motor_speed():
@@ -25,19 +20,31 @@ def get_motor_speed():
 @data.route('/api/data/setmotorspeed', methods=['GET'])
 def set_motor_speed():
     cmd = dict(request.args)
+    print(cmd)
     if not cmd:
         return jsonify(success=False), 500
 
     idx = int(cmd.pop('id'))
-    if idx >= len(motors) or idx < 0:
+    if (idx >= len(motors) or idx < 0) and not idx == -1:
+        print(2)
         return jsonify(success=False), 500
 
     speed = int(cmd.pop('speed'))
     if speed > 100 or speed < 0:
+        print(3)
         return jsonify(success=False), 500
 
-    motors[idx].set_speed(speed)
-    return jsonify(success=True), 200
+    print(4)
+    try:
+        if idx == -1:
+            [m.set_speed(speed) for m in motors]
+        else:
+            motors[idx].set_speed(speed)
+    except:
+        print(1)
+        return jsonify(success=False), 500
+    else:
+        return jsonify(success=True), 200
 
 
 @data.route('/api/data/getrotation')
@@ -48,16 +55,24 @@ def rotation():
         for i, _ in enumerate(data):
             if math.isnan(_):
                 data[i] = 0
-        x, y, z = data[-3:]
+        x, y, z = data[-4:-1]
 
     except Exception as e:
-        #print(f'error:{e}\nmsg:{data}')
+        print(f'error:{e}\nmsg:{data}')
         pass
     else:
         import math
-        return jsonify(position=[x, y, z])
+        return jsonify(position=[x, y, z]), 200
     return jsonify(success=500), 500
 
+@data.route('/api/data/loadmodel')
+def load_model():
+    from app import r
+    if request.method == 'GET':
+        rv = r.get('_model')
+        return jsonify(model=rv, success=True), 200
+    r.set('_model', reuest.data)
+    return jsonify(success=True), 200
 
 import atexit
 
