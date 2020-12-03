@@ -3,6 +3,10 @@
    by Dejan, https://howtomechatronics.com
 */
 
+
+const int trigPin = 9;
+const int echoPin = 10;
+
 #include <Wire.h>
 
 const int MPU = 0x68; // MPU6050 I2C address
@@ -11,10 +15,14 @@ float errors[5];
 
 void calculate_IMU_error(float arr[]);
 void read_imu(float rv[]);
-void send_data(float acc_x, float acc_y, float acc_z, float gyr_x, float gyr_y, float gyr_z);
+void send_data(float acc_x, float acc_y, float acc_z, float gyr_x, float gyr_y, float gyr_z, float dist);
 
 void setup() {
   Serial.begin(19200);
+  
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+
   Wire.begin();                      // Initialize comunication
   Wire.beginTransmission(MPU);       // Start communication with MPU6050 // MPU=0x68
   Wire.write(0x6B);                  // Talk to the register 6B
@@ -67,7 +75,8 @@ void loop() {
   pitch = 0.96 * gyroAngleY + 0.04 * accAngleY;
 
   float g = 9.81;
-  send_data(AccX * g, AccY * g, AccZ * g, roll, pitch, yaw);
+  float dist = read_ultrasonic();
+  send_data(AccX * g, AccY * g, AccZ * g, roll, pitch, yaw, dist);
 }
 
 
@@ -149,11 +158,24 @@ void read_imu(float rv[]){
     }
 }
 
-void send_data(float acc_x, float acc_y, float acc_z, float gyr_x, float gyr_y, float gyr_z){
+float read_ultrasonic(){
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  double duration = pulseIn(echoPin, HIGH);
+  double distance = duration*0.034/2;
+  return distance;
+}
+
+void send_data(float acc_x, float acc_y, float acc_z, float gyr_x, float gyr_y, float gyr_z, float dist){
   Serial.print("x:"); Serial.print(acc_x);
   Serial.print(",y:"); Serial.print( acc_y);
   Serial.print(",z:"); Serial.print(acc_z);
   Serial.print(";x:"); Serial.print(gyr_x);
   Serial.print(",y:"); Serial.print(gyr_y);
-  Serial.print(",z:"); Serial.println(gyr_z);
+  Serial.print(",z:"); Serial.print(gyr_z);
+  Serial.print(";d:"); Serial.println(dist);
 }
