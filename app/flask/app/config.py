@@ -9,6 +9,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PORT = 5000
 
+class ProdConfig(Config):
+    pass
 
 class DevConfig(Config):
     DEBUG = True

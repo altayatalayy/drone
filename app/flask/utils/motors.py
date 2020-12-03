@@ -34,11 +34,13 @@ class BLDC:
 
 
     def set_speed(self, speed:'int:percentage'):
-        if not (speed >= -100 and speed <= 100):
+        if not (speed >= 0 and speed <= 100) and not speed == -100:
             raise ValueError(f'speed must be an int betwenn -100 and 100')
         self.speed = int(self.min_value + (self.max_value - self.min_value) * (speed / 100))
         self.pi.set_servo_pulsewidth(self.pin, self.speed)
 
+    def get_speed(self):
+        return int((self.speed - self.min_value) / (self.max_value - self.min_value))
 
     def calibrate(self):   #This is the auto calibration procedure of a normal ESC
         self.set_speed(0)
