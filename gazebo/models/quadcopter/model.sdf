@@ -20,6 +20,9 @@
 						<scale>0.001 0.001 0.001</scale>
 					</mesh>
 				</geometry>
+				<material>
+    <script>Gazebo/Orange</script>
+</material>
 			</visual>
 		</link>
 	</model>
