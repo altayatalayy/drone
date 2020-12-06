@@ -8,9 +8,11 @@ from app.models import User
 main = Blueprint('main', __name__)
 
 host = 'http://127.0.0.1:5000'
+
 @main.route('/home', methods=['GET', 'POST'])
 def home():
-    return render_template('home.html')
+    motors = [1, 2, 3, 4]
+    return render_template('home.html', motors=motors)
 
 
 @main.route('/', methods=['GET', 'POST'])

@@ -113,7 +113,7 @@ def parse_ser(s:str):
     return tuple(float(s.split(':')[1]) for s in chain(acc.split(','), gyro.split(','), [d]))
 
 
-class linear(Averaged, Shared, Data):
+class linear(Averaged, Data):
     '''
         Starts a daemon thread that reads from the serial
         stores acc and gyro data as a list on a redis server
@@ -122,7 +122,7 @@ class linear(Averaged, Shared, Data):
     def __init__(self, *args, port='/dev/ttyUSB0', baudrate=19200, **kwargs):
         import serial
         #port = '/dev/cu.usbserial-14320'
-        self.ser = serial.Serial(port, baudrate)
+        self.ser = serial.Serial(port, baudrate, timeout=5)
         super().__init__(*args, **kwargs)
 
     def loop(self):
@@ -133,16 +133,17 @@ class linear(Averaged, Shared, Data):
             except Exception as e:
                 print(e)
                 pass
-            try:
-                v = parse_ser(line)
-            except ValueError as e:
-                #print(f'error:{e}\nstr:{line}')
-                pass
-            except Exception as e:
-                #print(f'error:{e}\nline{line}')
-                pass
             else:
-                self.update_con(v)
+                try:
+                    v = parse_ser(line)
+                except ValueError as e:
+                    print(f'error:{e}\nstr:{line}')
+                    pass
+                except Exception as e:
+                    print(f'error:{e}\nline{line}')
+                    pass
+                else:
+                    self.update_con(v)
         return
 
     def close(self):

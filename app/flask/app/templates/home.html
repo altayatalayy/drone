@@ -5,20 +5,31 @@
 	<link rel="stylesheet", href="static/css/model.css">
 	<link rel="stylesheet", href="static/css/controls.css">
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r122/three.js"></script>
-	<script type="module" src="static/js/model.js"></script>
+	<script type="module" src="static/js/OBJLoader.js"></script>
 {% endblock preample %}
 
 {% block content %}
 
-<div class='canvas' id="canvas"> </div>
+<div class='canvas' id="canvas">
+	<div id="info">roll pitch yaw</div>
+</div>
 
 <div class='controls'>
-	  <input type="range" min="0" max="100" value="0" class="slider" id="slider1">
-	  <input type="range" min="0" max="100" value="0" class="slider" id="slider2">
-	  <input type="range" min="0" max="100" value="0" class="slider" id="slider3">
-	  <input type="range" min="0" max="100" value="0" class="slider" id="slider4">
+	<div class="motor" id="master">
+		<label>Master</label>
+		<input type="range" min="0" max="100" value="0" class="slider" id=0 step="5">
+		<textarea id="t1">0%</textarea>
+	</div>
+	{% for motor in motors %}
+		<div class="motor">
+			<label>Motor{{ loop.index }}</label>
+			<input type="range" min="0" max="100" value="-1" class="slider" id={{ loop.index }} step="5">
+			<textarea id="t2">-1%</textarea>
+		</div>
+	{% endfor %}
 </div>
 
 
+<script type="module" src="static/js/model.js"></script>
 <script  src="static/js/controls.js"></script>
 {% endblock content %}

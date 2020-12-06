@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
-from utils.data import linear
-from utils import motor_list as motors
-from utils import l
+from app import r
+import time
 
 data = Blueprint('data', __name__)
 
@@ -15,7 +14,17 @@ def get_motor_speed():
     if idx >= len(motors) or idx < 0:
         return jsonify(success=False), 500
 
-    return jsonify(speed=motors[idx].speed)
+    r.rpush('_drone_cmd', f'get_motor_speeds')
+    t0 = time.time()
+    while r.llen('_motor_speeds') == 0:
+        time.sleep(0.05)
+        t1 = time.time()
+        if t1 - t0 > 2:
+            return jsonify(success=False), 500
+    speeds = r.lpop('_motor_speeds').decode('utf-8').split(',')#csv (e.g. '0,0,0,0')
+    speeds = [int(s) for s in speeds]
+    return jsonify(speed=speeds[idx])
+
 
 @data.route('/api/data/setmotorspeed', methods=['GET'])
 def set_motor_speed():
@@ -49,7 +58,17 @@ def set_motor_speed():
 
 @data.route('/api/data/getrotation')
 def rotation():
-    data = l.get_data()
+    r.rpush('_drone_cmd', f'get_data')
+    t0 = time.time()
+    while r.llen('_data_queue') == 0:
+        time.sleep(0.05)
+        t1 = time.time()
+        if t1 - t0 > 2:
+            return jsonify(success=False), 500
+    data = r.lpop('_data_queue').decode('utf-8').split(',')#csv (e.g. '0,0,0,0,0,0,0')
+    data = [float(str(s)) for s in data]
+
+
     try:
         import math
         for i, _ in enumerate(data):
@@ -61,9 +80,8 @@ def rotation():
         print(f'error:{e}\nmsg:{data}')
         pass
     else:
-        import math
-        return jsonify(position=[x, y, z]), 200
-    return jsonify(success=500), 500
+        return jsonify(position=[x, y, z], success=True), 200
+    return jsonify(success=False), 500
 
 @data.route('/api/data/loadmodel')
 def load_model():
