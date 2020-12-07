@@ -1,5 +1,8 @@
-import {OBJLoader} from "/static/js/OBJLoader.js"
+import * as THREE from '/static/js/three.module1.js';
+import { OBJLoader } from '/static/js/OBJLoader.js';
+
 let scene, camera, renderer, loader, model;
+var controls;
 
 let object;
 function loadModel() {
@@ -13,6 +16,10 @@ function loadModel() {
 	object.scale.multiplyScalar(scale);
 	object.position.sub(center)
 	scene.add( object );
+	object.rotation.set(0, 0, -3.14/4);
+	var model_axis =  new THREE.AxesHelper(200);
+	model_axis.rotation.set(0, 0, 3.14/4)
+	object.add(model_axis);
 }
 
 function init(){
@@ -31,15 +38,19 @@ function init(){
 	};
 	loader = new OBJLoader(manager);
 
+
 	renderer.setSize(w, h);
 	//document.body.appendChild( container );
 	container.appendChild( renderer.domElement );
-
+	var plane = new THREE.GridHelper(500, 10);
+	plane.rotation.set(3.14/2, 0, 0);
+    scene.add(plane);
 	loader.load('/static/models/Drone_assembly1_v1.obj', function( obj ){ object=obj});
 	//model = new THREE.Mesh(object, material);
 
-	camera.position.set(0,30,390);
+	camera.position.set(0,0,390);
 	camera.lookAt(scene.position);
+	//controls = new THREE.OrbitControls(camera, renderer.domElement);
 }
 
 const Http = new XMLHttpRequest();
@@ -60,7 +71,7 @@ function animate(){
 			x = (a[0] % 360);
 			y = (a[1] % 360);
 			z = (a[2] % 360);
-			object.rotation.set(x, y, z);
+			object.rotation.set(x, y, z - 3.14/4);
 		}
 	}
 	

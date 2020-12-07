@@ -1,17 +1,17 @@
 import {
-	BufferGeometry,
-	FileLoader,
-	Float32BufferAttribute,
-	Group,
-	LineBasicMaterial,
-	LineSegments,
-	Loader,
-	Material,
-	Mesh,
-	MeshPhongMaterial,
-	Points,
-	PointsMaterial,
-	Vector3
+		BufferGeometry,
+		FileLoader,
+		Float32BufferAttribute,
+		Group,
+		LineBasicMaterial,
+		LineSegments,
+		Loader,
+		Material,
+		Mesh,
+		MeshPhongMaterial,
+		Points,
+		PointsMaterial,
+		Vector3
 } from "/static/js/three.module1.js";
 
 var OBJLoader = ( function () {
