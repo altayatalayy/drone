@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://wiki.ros.org/xacro" >
+
+  <xacro:macro name="imu sensor" params="name parent *origin sim_name ros_topic update_rate min_range max_range field_of_view ray_count">> 
+  
+      <joint name="imu+quad_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="link_quad"/>
+      <child link="link_imu"/>
+      </joint>
+
+  <link name="link_imu" />
+     <inertial>
+     <origin xyz="0 0 0.16" rpy="0 0 0"/>
+     <mass value="0.003"/>
+     <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
+   </inertial>
+
+     <visual>
+     <origin xyz="0 0 0.16" rpy="0 0 0" />
+     <geometry>
+            <box size="0.015 0.025 0.002" />
+     </geometry>
+   </visual>
+   
+     <collision>
+       <origin xyz="0 0 0.16" rpy="0 0 0" />
+       <geometry>
+         <box size="0.015 0.025 0.002" />
+       </geometry>
+      </collision>
+ </link>
+ 
+   <gazebo reference="link_imu">
+    <gravity>true</gravity>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>imu_signal</topic>
+      
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>imu</topicName>
+        <bodyName>link_imu</bodyName>
+        <updateRateHZ>10.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_link</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+ 
+ </xacro:macro>
+ </robot>
+ 
+
+<!--
+  <joint name="joint1" type="fixed">
+    <parent link="link_quad"/>
+    <child link="link_imu"/>
+    <origin xyz="0 0 0.161" rpy="0 0 0" />
+  </joint>
+  -->
+  
+  <!--
+	<joint type="revolute" name="joint_imu+quadcopter">
+	  <pose>0 0 5 0 0 0</pose>
+	    <parent link="link_quad"/>
+	    <child link="link_imu"/>
+		<axis xyz="0 0 1"/>
+	    <limit>
+	      <lower>0</lower>
+	      <upper>0</upper>
+	    </limit>
+	</joint> -->
