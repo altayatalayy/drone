@@ -6,7 +6,7 @@
   
       <joint name="imu+quad_joint" type="fixed">
       <xacro:insert_block name="origin" />
-      <parent link="link_quad"/>
+      <parent link="chassis_link"/>
       <child link="link_imu"/>
       </joint>
 
@@ -14,7 +14,7 @@
      <inertial>
      <origin xyz="0 0 0.16" rpy="0 0 0"/>
      <mass value="0.003"/>
-     <inertia ixx="100"  ixy="0"  ixz="0" iyy="100" iyz="0" izz="100" />
+     <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001" />
    </inertial>
 
      <visual>
@@ -38,7 +38,7 @@
       <always_on>true</always_on>
       <update_rate>100</update_rate>
       <visualize>true</visualize>
-      <topic>imu_signal</topic>
+      <topic>__default_topic__</topic>
       
       <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
         <topicName>imu</topicName>
@@ -50,7 +50,7 @@
         <frameName>imu_link</frameName>
         <initialOrientationAsReference>false</initialOrientationAsReference>
       </plugin>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>0 0 0.16 0 0 0</pose>
     </sensor>
   </gazebo>
  
