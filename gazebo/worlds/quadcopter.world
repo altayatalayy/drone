@@ -8,10 +8,7 @@
       <uri>model://sun</uri>
     </include>
     <include>
-      <uri>/home/saykay/drone/gazebo/models/quadcopter/</uri>
-    </include>
-        <include>
-      <uri>/home/saykay/drone/gazebo/models/IMU/</uri>
+      <uri>/home/saykay/drone/gazebo/meshes/quadrotor/</uri>
     </include>
   </world>
 </sdf>
