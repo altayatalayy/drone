@@ -4,6 +4,9 @@ import time
 
 data = Blueprint('data', __name__)
 
+from utils.controller import ControllerApi
+c = ControllerApi()
+
 @data.route('/api/data/getmotorspeed')
 def get_motor_speed():
     cmd = dict(request.args)
@@ -14,15 +17,9 @@ def get_motor_speed():
     if idx >= len(motors) or idx < 0:
         return jsonify(success=False), 500
 
-    r.rpush('_drone_cmd', f'get_motor_speeds')
-    t0 = time.time()
-    while r.llen('_motor_speeds') == 0:
-        time.sleep(0.05)
-        t1 = time.time()
-        if t1 - t0 > 2:
-            return jsonify(success=False), 500
-    speeds = r.lpop('_motor_speeds').decode('utf-8').split(',')#csv (e.g. '0,0,0,0')
-    speeds = [int(s) for s in speeds]
+    speeds = c.get_motor_speeds()
+    if speeds == -1:
+        return jsonify(success=False), 500
     return jsonify(speed=speeds[idx])
 
 
@@ -58,23 +55,16 @@ def set_motor_speed():
 
 @data.route('/api/data/getrotation')
 def rotation():
-    r.rpush('_drone_cmd', f'get_data')
-    t0 = time.time()
-    while r.llen('_data_queue') == 0:
-        time.sleep(0.05)
-        t1 = time.time()
-        if t1 - t0 > 2:
-            return jsonify(success=False), 500
-    data = r.lpop('_data_queue').decode('utf-8').split(',')#csv (e.g. '0,0,0,0,0,0,0')
-    data = [float(str(s)) for s in data]
-
-
+    
+    data = c.get_rotation()
+    if data == -1:
+        return jsonify(success=False), 500
     try:
         import math
         for i, _ in enumerate(data):
             if math.isnan(_):
                 data[i] = 0
-        x, y, z = data[-4:-1]
+        x, y, z = data
 
     except Exception as e:
         print(f'error:{e}\nmsg:{data}')
@@ -92,10 +82,43 @@ def load_model():
     r.set('_model', reuest.data)
     return jsonify(success=True), 200
 
-import atexit
+from itertools import count
+ct = count()
+cy = count()
+cp = count()
+cr = count()
 
-def close():
-    l.close()
-    print(2)
 
-#atexit.register(close)
+@data.route('/api/data/getpidtdata', methods=['GET', 'POST'])
+def get_pid_t_data():
+    data = c.get_pid_t_data()
+    if data == -1:
+        return jsonify(success=False), 500
+    data.insert(0, next(ct))
+    return jsonify(points=data, success=True), 200
+
+
+@data.route('/api/data/getpidydata', methods=['GET', 'POST'])
+def get_pid_y_data():
+    data = c.get_pid_y_data()
+    if data == -1:
+        return jsonify(success=False), 500
+    data.insert(0, next(cy))
+    return jsonify(points=data, success=True), 200
+
+@data.route('/api/data/getpidpdata', methods=['GET', 'POST'])
+def get_pid_p_data():
+    data = c.get_pid_p_data()
+    if data == -1:
+        return jsonify(success=False), 500
+    data.insert(0, next(cp))
+    return jsonify(points=data, success=True), 200
+
+@data.route('/api/data/getpidrdata', methods=['GET', 'POST'])
+def get_pid_r_data():
+    data = c.get_pid_r_data()
+    if data == -1:
+        return jsonify(success=False), 500
+    data.insert(0, next(cr))
+    return jsonify(points=data, success=True), 200
+

@@ -5,23 +5,6 @@ from collections import deque
 from itertools import chain
 import numpy as np
 
-class Averaged:
-    '''
-        This class modifies update_con. Takes the averages of given data
-        to reduce the noise in the data. Equvalent to loww pass filter.?
-        idea from: https://www.researchgate.net/post/How_can_I_reduce_noise_from_accelerometer_and_gyroscope_values_of_the_nao_robot_for_classification
-    '''
-
-    def __init__(self, *args, n = 3, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._n = n
-        self._q = deque(maxlen=self._n)
-
-    def update_con(self, data:'iterable'):
-        self._q.append(np.array(data))
-        if not len(self._q) < self._n:
-            super().update_con(tuple(sum(self._q) / self._n))
-
 class Shared:
     '''
         This class modifies the get_data and update_con methods,
@@ -104,26 +87,82 @@ def f():
 a = f()
 #######
 
+
+class Averaged:
+    '''
+        This class modifies update_con. Takes the averages of given data
+        to reduce the noise in the data. Equvalent to loww pass filter.?
+        idea from: https://www.researchgate.net/post/How_can_I_reduce_noise_from_accelerometer_and_gyroscope_values_of_the_nao_robot_for_classification
+    '''
+
+    def __init__(self, *args, n = 10, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._n = n
+        self._q = deque(maxlen=self._n)
+
+    def update(self, data:'iterable'):
+        #print(data)
+        if len(data) == 6:
+            data.append(0)
+        self._q.append(np.array(data))
+        if not len(self._q) < self._n:
+            data = tuple(sum(self._q) / self._n)
+            return data
+
+
+
 def parse_ser(s:str):
     '''
         parse linear data from serial return tuple of float
         ex: x:0,y:0,z:0;x:0,y:0,z:0;d:0 -> (0,0,0,0,0,0,0)
     '''
-    acc, gyro, d = s.split(';')
-    return tuple(float(s.split(':')[1]) for s in chain(acc.split(','), gyro.split(','), [d]))
+    acc, gyro, d, bat = s.split(';')
+    #print(acc, gyro, d, bat)
+    if bat:
+        return tuple(float(str(s)) for s in chain(acc.split(','), gyro.split(','), [d], [bat]))
+    return tuple(float(str(s)) for s in chain(acc.split(','), gyro.split(','), [d]))
 
 
-class linear(Averaged, Data):
-    '''
-        Starts a daemon thread that reads from the serial
-        stores acc and gyro data as a list on a redis server
-        returns the values from the redis server
-    '''
+class Sensor(Averaged):
     def __init__(self, *args, port='/dev/ttyUSB0', baudrate=19200, **kwargs):
         import serial
         #port = '/dev/cu.usbserial-14320'
+        self._connected = False
         self.ser = serial.Serial(port, baudrate, timeout=5)
         super().__init__(*args, **kwargs)
+        #status = self.connect()
+        #if status != -1:
+            #self._connected = True
+
+    def readline(self):
+        try:
+            msg = self.ser.readline().decode('utf-8')[:-2]
+        except Exception as e:
+            print(e)
+        else:
+            return msg
+
+
+    def get_data(self):
+        data = self.readline()
+        if data:
+            try:
+                data = parse_ser(data)
+            except Exception as e:
+                print(f'error:{e}\ndata:{data}')
+            else:
+                return super().update(data)
+
+    '''
+    def loop2(self):
+        while True:
+            l = self.ser.readline().decode('utf-8')[:-2]
+            try:
+                l =  parse_ser(l)
+            except:
+                pass
+            else:
+                print(l)
 
     def loop(self):
         #This method will run only on the master process
@@ -145,8 +184,68 @@ class linear(Averaged, Data):
                 else:
                     self.update_con(v)
         return
+    '''
+
+    def connect(self):
+        import time
+        t0 = time.time()
+        while time.time() - t0 < 20:
+            msg = self.readline()
+            if msg == "calibrate mag":
+                #input("Press enter")
+                self.ser.write('\n'.encode('utf-8'))
+                self.ser.flush()
+                break
+        else:
+            return -1
+
+        # calibrate mag
+        t0 = time.time()
+        while time.time() - t0 < 40:
+            msg = self.readline()
+            if msg == "OK":
+                break
+        else:
+            return -1
+        print('connected')
+        self.readline()
 
     def close(self):
         #this method is registered to run at exit by the data class
-        super().close()
+        #super().close()
         self.ser.close()
+
+import time
+import math
+import numpy as np
+
+class Filter:
+
+    def __init__(self, alpha=0.08):
+        ''' complementary Filter for gyro and acc '''
+        self.gyr = np.array([0, 0, 0], dtype=float)
+        self.alpha = alpha
+
+    @staticmethod
+    def dist(a, b):
+        return math.sqrt(a**2 + b**2)
+
+    def update(self, acc, gyr:np.array, dt):
+        ''' returns x,y,z angles in degrees'''
+
+        self.gyr += gyr * dt
+        x, y, z = acc
+        rot_x = -math.atan2(x, self.dist(y, z))
+        rot_y = math.atan2(y, self.dist(x, z))
+
+        x = (1 - self.alpha) * self.gyr[0] + self.alpha * rot_x
+        y = (1 - self.alpha) * self.gyr[1] + self.alpha * rot_y
+        z = self.gyr[2]
+        return x, y, z
+
+
+
+
+
+
+

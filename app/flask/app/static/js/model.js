@@ -58,7 +58,7 @@ const Http = new XMLHttpRequest();
 function animate(){
 	setTimeout( function() {
 		requestAnimationFrame(animate);
-	}, 1000 / 30 );
+	}, 1000 / 20 );
 
 	var x, y, z;
 	const url = "http://192.168.1.25:5000/api/data/getrotation"

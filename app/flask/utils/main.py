@@ -1,10 +1,11 @@
 from motors import BLDC
-from data import linear
+from data import Sensor
+from controller import Controller
 
-motor_list = BLDC.from_csv()
-l = linear(port='/dev/ttyUSB0')
+sensor = Sensor(port='/dev/ttyUSB0', baudrate=115200, n=20)
+status = sensor.connect()
+print(status)
 
-from pid import Drone
-drone = Drone(l, motor_list)
-drone.command_loop()
+cont = Controller(sensor)
+cont.command_loop()
 
