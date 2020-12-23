@@ -221,10 +221,14 @@ import numpy as np
 
 class Filter:
 
-    def __init__(self, alpha=0.08):
+    def __init__(self, alpha=0.04):
         ''' complementary Filter for gyro and acc '''
         self.gyr = np.array([0, 0, 0], dtype=float)
         self.alpha = alpha
+        self.n = 0
+        self.rot_x_error = 0
+        self.rot_y_error = 0
+        self._is_calibrated = False
 
     @staticmethod
     def dist(a, b):
@@ -233,16 +237,44 @@ class Filter:
     def update(self, acc, gyr:np.array, dt):
         ''' returns x,y,z angles in degrees'''
 
+        #print([round(a, 4) for a in acc])
         self.gyr += gyr * dt
-        x, y, z = acc
-        rot_x = -math.atan2(x, self.dist(y, z))
-        rot_y = math.atan2(y, self.dist(x, z))
+
+        gyr[1] -= gyr[0] * math.sin(gyr[2] * dt)
+        gyr[0] += gyr[1] * math.sin(gyr[2] * dt)
+
+        #x, y, z = acc
+
+       #print(rot_x, rot_y)
+        rot_x, rot_y = self.get_rot(acc)
 
         x = (1 - self.alpha) * self.gyr[0] + self.alpha * rot_x
         y = (1 - self.alpha) * self.gyr[1] + self.alpha * rot_y
         z = self.gyr[2]
         return x, y, z
 
+    def calibrate(self, acc):
+        #x, y, z = acc
+        #rot_x = -math.atan2(x, self.dist(y, z))
+        #rot_y = math.atan2(y, self.dist(x, z))
+        rot_x, rot_y = self.get_rot(acc)
+        self.rot_x_error += rot_x
+        self.rot_y_error += rot_y
+        self.n += 1
+        if self.n >= 100:
+            self._is_calibrated = True
+            self.rot_x_error /= self.n
+            self.rot_y_error /= self.n
+            self.gyr = np.array([rot_x - self.rot_x_error, rot_y - self.rot_y_error, 0], dtype=float)
+
+    def get_rot(self, acc):
+        x, y, z = acc
+        #a_tot = (x**2 + y**2 + z**2)**0.5
+        #rot_x = math.asin(x / a_tot) - self.rot_x_error
+        #rot_y = math.asin(y / a_tot) - self.rot_y_error
+        rot_x = -math.atan2(x, self.dist(y, z)) - self.rot_x_error
+        rot_y = math.atan2(y, self.dist(x, z)) - self.rot_y_error
+        return rot_x, rot_y
 
 
 

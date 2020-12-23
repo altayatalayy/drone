@@ -55,7 +55,6 @@ def set_motor_speed():
 
 @data.route('/api/data/getrotation')
 def rotation():
-    
     data = c.get_rotation()
     if data == -1:
         return jsonify(success=False), 500
@@ -82,19 +81,19 @@ def load_model():
     r.set('_model', reuest.data)
     return jsonify(success=True), 200
 
+'''
 from itertools import count
 ct = count()
 cy = count()
 cp = count()
 cr = count()
-
+'''
 
 @data.route('/api/data/getpidtdata', methods=['GET', 'POST'])
 def get_pid_t_data():
     data = c.get_pid_t_data()
     if data == -1:
         return jsonify(success=False), 500
-    data.insert(0, next(ct))
     return jsonify(points=data, success=True), 200
 
 
@@ -103,7 +102,6 @@ def get_pid_y_data():
     data = c.get_pid_y_data()
     if data == -1:
         return jsonify(success=False), 500
-    data.insert(0, next(cy))
     return jsonify(points=data, success=True), 200
 
 @data.route('/api/data/getpidpdata', methods=['GET', 'POST'])
@@ -111,7 +109,6 @@ def get_pid_p_data():
     data = c.get_pid_p_data()
     if data == -1:
         return jsonify(success=False), 500
-    data.insert(0, next(cp))
     return jsonify(points=data, success=True), 200
 
 @data.route('/api/data/getpidrdata', methods=['GET', 'POST'])
@@ -119,6 +116,5 @@ def get_pid_r_data():
     data = c.get_pid_r_data()
     if data == -1:
         return jsonify(success=False), 500
-    data.insert(0, next(cr))
     return jsonify(points=data, success=True), 200
 

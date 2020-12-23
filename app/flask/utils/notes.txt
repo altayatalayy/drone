@@ -1,0 +1,6 @@
+
+motor_serive.sh is run by systemd on startup to set motor pwm signals to esc s min value.
+
+to check the service run systemctl status motors.service
+or run sudo journalctl -u motors.service to see the log
+motors.service is in the /lib/systemd/system/

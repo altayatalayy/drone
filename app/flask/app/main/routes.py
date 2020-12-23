@@ -12,8 +12,12 @@ host = 'http://192.168.1.25:5000'
 @main.route('/home', methods=['GET', 'POST'])
 def home():
     motors = [1, 2, 3, 4]
+    return render_template('home.html', motors=motors)
+
+@main.route('/pidplots', methods=['GET', 'POST'])
+def pid_tunning():
     script, div, cdn_js = plot()
-    return render_template('home.html', motors=motors, script=script, div=div, cdn_js=cdn_js)
+    return render_template('pid_tunning.html', script=script, div=div, cdn_js=cdn_js)
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -79,31 +83,31 @@ def plot():
     return result
     """)
 
-    pid_t_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_t_data")}', polling_interval=150, adapter=pid_adapter, mode='append', max_size=500)
-    pid_y_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_y_data")}', polling_interval=250, adapter=pid_adapter, mode='append', max_size=1024)
-    pid_p_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_p_data")}', polling_interval=250, adapter=pid_adapter, mode='append', max_size=1024)
-    pid_r_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_r_data")}', polling_interval=250, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_t_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_t_data")}', polling_interval=100, adapter=pid_adapter, mode='append', max_size=500)
+    pid_y_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_y_data")}', polling_interval=100, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_p_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_p_data")}', polling_interval=100, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_r_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_r_data")}', polling_interval=100, adapter=pid_adapter, mode='append', max_size=1024)
 
-    pid_t_plot = figure(output_backend='webgl')
-    pid_y_plot = figure(output_backend='webgl')
-    pid_p_plot = figure(output_backend='webgl')
-    pid_r_plot = figure(output_backend='webgl')
+    pid_t_plot = figure(title='dist', output_backend='webgl')
+    pid_y_plot = figure(title='yaw', output_backend='webgl')
+    pid_p_plot = figure(title='pitch', output_backend='webgl')
+    pid_r_plot = figure(title='roll', output_backend='webgl')
 
-    pid_t_plot.circle('x', 'ref', source=pid_t_source)
-    pid_t_plot.circle('x', 'v', color='orange', source=pid_t_source)
-    pid_t_plot.circle('x', 'rv', color='red', source=pid_t_source)
+    pid_t_plot.line('x', 'ref',  legend_label="ref", source=pid_t_source)
+    pid_t_plot.line('x', 'v', color='orange',  legend_label="measured", source=pid_t_source)
+    pid_t_plot.line('x', 'rv', color='red',  legend_label="pid out", source=pid_t_source)
 
-    pid_y_plot.circle('x', 'ref', source=pid_y_source)
-    pid_y_plot.circle('x', 'v', color='orange', source=pid_y_source)
-    pid_y_plot.circle('x', 'rv', color='red', source=pid_y_source)
+    pid_y_plot.line('x', 'ref', source=pid_y_source)
+    pid_y_plot.line('x', 'v', color='orange', source=pid_y_source)
+    pid_y_plot.line('x', 'rv', color='red', source=pid_y_source)
 
-    pid_p_plot.circle('x', 'ref', source=pid_p_source)
-    pid_p_plot.circle('x', 'v', color='orange', source=pid_p_source)
-    pid_p_plot.circle('x', 'rv', color='red', source=pid_p_source)
+    pid_p_plot.line('x', 'ref', source=pid_p_source)
+    pid_p_plot.line('x', 'v', color='orange', source=pid_p_source)
+    pid_p_plot.line('x', 'rv', color='red', source=pid_p_source)
 
-    pid_r_plot.circle('x', 'ref', source=pid_r_source)
-    pid_r_plot.circle('x', 'v', color='orange', source=pid_r_source)
-    pid_r_plot.circle('x', 'rv', color='red', source=pid_r_source)
+    pid_r_plot.line('x', 'ref', source=pid_r_source)
+    pid_r_plot.line('x', 'v', color='orange', source=pid_r_source)
+    pid_r_plot.line('x', 'rv', color='red', source=pid_r_source)
 
     p = gridplot([[pid_t_plot, pid_y_plot], [pid_p_plot, pid_r_plot]])
 

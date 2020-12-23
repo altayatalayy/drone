@@ -30,7 +30,7 @@ class BLDC:
                     print(e)
                 else:
                     rv.append(BLDC(pin_num, *meta))
-        return rv
+        return tuple(rv)
 
 
     def set_speed(self, speed:'int:percentage'):

@@ -5,7 +5,10 @@ import redis
 import atexit
 import time
 import numpy as np
-import numpy as np
+
+import smbus
+from imusensor.MPU9250 import MPU9250
+from imusensor.filters import madgwick
 
 prio_cmd = '_drone_prio_cmd'
 cmd = '_drone_cmd'
@@ -17,10 +20,20 @@ class Controller:
         from pid import DronePID
         from motors import BLDC
 
+        sensorfusion = madgwick.Madgwick(0.01)
+        address = 0x68
+        bus = smbus.SMBus(1)
+        imu = MPU9250.MPU9250(bus, address)
+        imu.begin()
+
+        imu.loadCalibDataFromFile("/home/pi/projects/drone/app/flask/utils/calib.json")
+
+
+
         self.pids = DronePID()
         self.motors = BLDC.from_csv()
-        self.sensor = sensor
-        self.filter = Filter()
+        self.sensor = imu#sensor
+        self.filter = sensorfusion#Filter()
 
         self.r = redis.Redis('localhost')
         self.r.delete('_drone_cmd')
@@ -44,27 +57,46 @@ class Controller:
             [m.set_speed(speeds) for m in self.motors]
 
     def run(self):
+        time.sleep(0.1)
+        '''
+        while not self.filter._is_calibrated:
+            data = self.sensor.get_data()
+            if not data:
+                continue
+            acc = data[:3]
+            self.filter.calibrate(acc)
+        '''
+
         ts = time.time()
         t0 = ts
         n = 0
+
         while self._running:
-            data = self.sensor.get_data()#roll, pitch, yaw, dist
+            data = self.sensor.readSensor()#roll, pitch, yaw, dist
+            '''
             if not data:
                 time.sleep(0.01)
                 continue
+            '''
             #data = data[::-1]
-            t1 = time.time()
-            dt = t1 - t0
-            acc, gyr = data[:3], data[3:6]
-            rotation = self.filter.update(acc, np.array(gyr, dtype=float), dt)
-            dist = data[6]
+            for _ in range(10):
+                t1 = time.time()
+                dt = t1 - t0
+                t0 = t1
+                self.filter.updateRollPitchYaw(self.sensor.AccelVals[0], self.sensor.AccelVals[1], self.sensor.AccelVals[2], self.sensor.GyroVals[0], \
+                        self.sensor.GyroVals[1], self.sensor.GyroVals[2], self.sensor.MagVals[0], self.sensor.MagVals[1], self.sensor.MagVals[2], dt)
+
+
+            #acc, gyr = data[:3], data[3:6]
+            #rotation = self.filter.update(acc, np.array(gyr, dtype=float), dt)
+            dist = 18#data[6]
             #print(f'data: {[round(d, 4) for d in data]}')
             #print(round(dt, 5))
             #print(dist)
-            self.rotation = rotation
+            self.rotation = [self.filter.pitch, self.filter.roll, self.filter.yaw]
             self.dist = dist
-            rotation[::-1]
-            cmds, t0 = self.pids(t1 - t0, [dist, *rotation]), t1
+            rotation = self.rotation[::-1]
+            cmds = self.pids(dt, [dist, *rotation])
             #print(f'cmds: {cmds}\n')
             #n += 1
             #print(f'freq:{n / (time.time()-ts)}Hz')
@@ -88,6 +120,11 @@ class Controller:
 
 
         cmds = ('get_motor_speeds', 'get_data', 'QUIT', 'START', 'SOFTSTOP', 'STOP')
+        from itertools import count
+        ct = count()
+        cp = count()
+        cy = count()
+        cr = count()
         while True:
             while self.r.llen(prio_cmd) > 0:
                 cmd = self.r.lpop(prio_cmd).decode('utf-8')
@@ -130,16 +167,24 @@ class Controller:
                 self.r.rpush('_bat', 0)
 
             elif cmd == 'get_pid_t_data':
-                self.r.rpush('_pid_t_data', to_str(self.pids.get_pid_data(0)))
+                data = self.pids.get_pid_data(0)
+                data.insert(0, next(cr))
+                self.r.rpush('_pid_t_data', to_str(data))
 
             elif cmd == 'get_pid_y_data':
-                self.r.rpush('_pid_y_data', to_str(self.pids.get_pid_data(1)))
+                data = self.pids.get_pid_data(1)
+                data.insert(0, next(cr))
+                self.r.rpush('_pid_y_data', to_str(data))
 
             elif cmd == 'get_pid_p_data':
-                self.r.rpush('_pid_p_data', to_str(self.pids.get_pid_data(2)))
+                data = self.pids.get_pid_data(2)
+                data.insert(0, next(cr))
+                self.r.rpush('_pid_p_data', to_str(data))
 
             elif cmd == 'get_pid_r_data':
-                self.r.rpush('_pid_r_data', to_str(self.pids.get_pid_data(3)))
+                data = self.pids.get_pid_data(3)
+                data.insert(0, next(cr))
+                self.r.rpush('_pid_r_data', to_str(data))
 
 
     def soft_stop(self):

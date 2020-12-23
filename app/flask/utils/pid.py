@@ -10,6 +10,7 @@ class PID:
         self.prev_e = 0
         self.I = 0
         self.val = 0
+        self.error = 0
 
     def __call__(self, val, dt):
         return self.calc(val, dt)

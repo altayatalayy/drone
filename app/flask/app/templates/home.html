@@ -7,22 +7,12 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r122/three.js"></script>
 	<script type="module" src="static/js/OBJLoader.js"></script>
 
-	{% for cdn in cdn_js %}
-		<script src={{cdn}} crossorigin="anonymous"></script>
-	{% endfor %}
-
-	{{script|safe}}
-
 {% endblock preample %}
 
 {% block content %}
 
 <div class='canvas' id="canvas">
 	<div id="info">roll pitch yaw</div>
-</div>
-
-<div class='container'>
-	{{div|safe}}
 </div>
 
 

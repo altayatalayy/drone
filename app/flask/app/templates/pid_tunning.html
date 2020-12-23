@@ -1,0 +1,22 @@
+
+{% extends "layout.html" %}
+
+{% block preample%}
+
+
+	{% for cdn in cdn_js %}
+		<script src={{cdn}} crossorigin="anonymous"></script>
+	{% endfor %}
+
+	{{script|safe}}
+
+{% endblock preample %}
+
+{% block content %}
+
+<div class='container'>
+	{{div|safe}}
+</div>
+
+{% endblock content %}
+
