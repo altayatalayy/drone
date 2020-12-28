@@ -20,7 +20,7 @@ class Controller:
         from pid import DronePID
         from motors import BLDC
 
-        sensorfusion = madgwick.Madgwick(0.01)
+        sensorfusion = madgwick.Madgwick(0.033)
         address = 0x68
         bus = smbus.SMBus(1)
         imu = MPU9250.MPU9250(bus, address)
@@ -31,7 +31,11 @@ class Controller:
 
 
         self.pids = DronePID()
-        self.motors = BLDC.from_csv()
+        m = BLDC.from_csv()
+        m[0].min_value = 700
+        m[3].min_value = 700
+        self.motors = [m[0], m[3], m[1], m[2]]
+
         self.sensor = imu#sensor
         self.filter = sensorfusion#Filter()
 
@@ -79,6 +83,7 @@ class Controller:
                 continue
             '''
             #data = data[::-1]
+            t2 = time.time()
             for _ in range(10):
                 t1 = time.time()
                 dt = t1 - t0
@@ -93,18 +98,21 @@ class Controller:
             #print(f'data: {[round(d, 4) for d in data]}')
             #print(round(dt, 5))
             #print(dist)
-            self.rotation = [self.filter.pitch, self.filter.roll, self.filter.yaw]
+            self.rotation = [-self.filter.pitch, self.filter.roll, self.filter.yaw]
             self.dist = dist
             rotation = self.rotation[::-1]
+            dt = t1 - t2
             cmds = self.pids(dt, [dist, *rotation])
             #print(f'cmds: {cmds}\n')
-            #n += 1
-            #print(f'freq:{n / (time.time()-ts)}Hz')
+            n += 1
+            print(f'freq:{n / (time.time()-ts)}Hz')
+            if(dt < 1/35):
+                time.sleep(1/35 - dt)
             import math
             if not math.nan in cmds:
                 #print(f'\n')
-                pass
-                #self.set_motor_speeds(cmds)
+                #pass
+                self.set_motor_speeds(cmds)
                 #[m.set_speed(min(max(cmd, 0), 100)) for m, cmd in zip(self.motors, cmds)]
 
     def command_loop(self):
@@ -139,6 +147,7 @@ class Controller:
 
                 elif cmd == 'STOP':
                     self.stop()
+                    self.set_motor_speeds(0)
 
                 elif cmd == 'QUIT':
                     self.r.delete('_drone_cmd')
@@ -188,10 +197,15 @@ class Controller:
 
 
     def soft_stop(self):
+        self.stop()
         cur_speeds = [m.get_speed() for m in self.motors]
         cur_speeds = [c*0.5 for c in cur_speeds]
         self.set_motor_speeds(cur_speeds)
         time.sleep(0.3)
+        cur_speeds = [m.get_speed() for m in self.motors]
+        cur_speeds = [c*0.5 for c in cur_speeds]
+        self.set_motor_speeds(cur_speeds)
+        time.sleep(0.2)
         self.set_motor_speeds(0)
 
     def start(self):

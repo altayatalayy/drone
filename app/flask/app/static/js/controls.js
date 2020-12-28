@@ -10,7 +10,7 @@ String.prototype.format = function() {
 
 var sliders = document.getElementsByClassName("slider");
 
-const url = "http://192.168.1.25:5000/api/data"
+const url = "http://192.168.1.31:5000/api/data"
 
 for(const slider of sliders){
 	slider.oninput = function() {

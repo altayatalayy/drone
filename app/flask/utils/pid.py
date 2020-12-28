@@ -11,6 +11,7 @@ class PID:
         self.I = 0
         self.val = 0
         self.error = 0
+        self.rv = 0
 
     def __call__(self, val, dt):
         return self.calc(val, dt)
@@ -39,17 +40,23 @@ class PID:
     def set_ref(ref):
         self.ref = ref
 
-
 class DronePID:
     KP, KD, KI = 0.05, 0.01, 0.01
+
+    def get_hover(*args):
+        return 55
 
     def __init__(self, n_motors=4):
         self.pids = []
         dist = PID(20, 1.5, 0, 0)
-        roll, pitch, yaw = [PID(0, 0, 0, 0) for _ in range(3)]
+        roll = PID(0, 1.05, 0, 0)
+        pitch = PID(0, 1.05, 0, 0)
+        yaw = PID(0, 0, 0, 0)
+        dist.calc = self.get_hover
         self.pids = [dist, yaw, pitch, roll]
 
     def __call__(self, dt, val:list):
+        #print(val)
         val = [pid(v, dt) for pid, v in zip(self.pids, val)]
         #[print(f'pid{i} output: {v}') for i, v in enumerate(val)]
         return self.mma(val)

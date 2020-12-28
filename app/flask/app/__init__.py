@@ -16,6 +16,9 @@ def create_app():
     login_manager = LoginManager(app)
     login_manager.login_view = 'main.login'
     r = redis.Redis('localhost')
+    r.delete('plot_script')
+    r.delete('plot_div')
+    r.delete('plot_cdn')
 
     return app, db, bcrypt, login_manager, r
 

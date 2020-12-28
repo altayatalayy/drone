@@ -4,6 +4,13 @@ Sets motors pwm signals to min values
 from motors import BLDC
 
 motors = BLDC.from_csv()
-motors[0].min_value = 825
-motors[3].min_value = 825
+#motors[0].min_value = 825
+#motors[3].min_value = 825
 [m.set_speed(0) for m in motors]
+
+def set(speed, motors=motors):
+    motors[0].set_speed(speed)
+    motors[3].set_speed(speed)
+    motors[1].set_speed(speed + 15)
+    motors[2].set_speed(speed + 15)
+
