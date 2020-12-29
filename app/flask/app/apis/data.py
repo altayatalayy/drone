@@ -52,6 +52,18 @@ def set_motor_speed():
     else:
         return jsonify(success=True), 200
 
+@data.route('/api/data/setcontroller', methods=['GET', 'POST'])
+def set_controller():
+    cmd = dict(request.args)
+    if not cmd:
+        return jsonify(success=False), 500
+    state = int(cmd.pop('state'))
+    if state:
+        c.start()
+    else:
+        c.stop()
+
+    return jsonify(success=True), 200
 
 @data.route('/api/data/getrotation')
 def rotation():

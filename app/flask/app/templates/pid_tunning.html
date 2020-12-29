@@ -3,6 +3,7 @@
 
 {% block preample%}
 
+	<link rel="stylesheet", href="static/css/pid_controls.css">
 
 	{% for cdn in cdn_js %}
 		<script src={{cdn}} crossorigin="anonymous"></script>
@@ -13,6 +14,12 @@
 {% endblock preample %}
 
 {% block content %}
+
+<label class="switch">
+	<input type="checkbox" id="switch">
+	<span class="slider round"></span>
+</label>
+<script src="static/js/pid_controls.js"></script>
 
 <div class='container'>
 	{{div|safe}}

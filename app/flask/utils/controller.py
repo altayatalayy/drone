@@ -6,9 +6,11 @@ import atexit
 import time
 import numpy as np
 
+'''
 import smbus
 from imusensor.MPU9250 import MPU9250
 from imusensor.filters import madgwick
+'''
 
 prio_cmd = '_drone_prio_cmd'
 cmd = '_drone_cmd'
@@ -20,6 +22,7 @@ class Controller:
         from pid import DronePID
         from motors import BLDC
 
+        '''
         sensorfusion = madgwick.Madgwick(0.033)
         address = 0x68
         bus = smbus.SMBus(1)
@@ -27,7 +30,7 @@ class Controller:
         imu.begin()
 
         imu.loadCalibDataFromFile("/home/pi/projects/drone/app/flask/utils/calib.json")
-
+'''
 
 
         self.pids = DronePID()
@@ -36,8 +39,8 @@ class Controller:
         m[3].min_value = 700
         self.motors = [m[0], m[3], m[1], m[2]]
 
-        self.sensor = imu#sensor
-        self.filter = sensorfusion#Filter()
+        #self.sensor = imu#sensor
+        #self.filter = sensorfusion#Filter()
 
         self.r = redis.Redis('localhost')
         self.r.delete('_drone_cmd')
@@ -50,6 +53,7 @@ class Controller:
         self.rotation = [0,0,0]
         self.dist = 0
 
+        self._running = False
         self.start()
 
     def set_motor_speeds(self, speeds):
@@ -74,14 +78,15 @@ class Controller:
         ts = time.time()
         t0 = ts
         n = 0
+        from collections import deque
+        q = deque(maxlen=3)
 
         while self._running:
-            data = self.sensor.readSensor()#roll, pitch, yaw, dist
             '''
+            data = self.sensor.readSensor()#roll, pitch, yaw, dist
             if not data:
                 time.sleep(0.01)
                 continue
-            '''
             #data = data[::-1]
             t2 = time.time()
             for _ in range(10):
@@ -99,6 +104,9 @@ class Controller:
             #print(round(dt, 5))
             #print(dist)
             self.rotation = [-self.filter.pitch, self.filter.roll, self.filter.yaw]
+            q.append(np.array(self.rotation))
+            self.rotation = sum(q)/len(q)
+
             self.dist = dist
             rotation = self.rotation[::-1]
             dt = t1 - t2
@@ -114,6 +122,9 @@ class Controller:
                 #pass
                 self.set_motor_speeds(cmds)
                 #[m.set_speed(min(max(cmd, 0), 100)) for m, cmd in zip(self.motors, cmds)]
+                '''
+            time.sleep(2)
+            print('running')
 
     def command_loop(self):
         def to_str(arr : list):
@@ -209,6 +220,8 @@ class Controller:
         self.set_motor_speeds(0)
 
     def start(self):
+        if self._running:
+            return
         self._running = True
         import threading
         self.daemon = threading.Thread(target=self.run)
