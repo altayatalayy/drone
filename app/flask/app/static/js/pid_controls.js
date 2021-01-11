@@ -11,7 +11,7 @@ String.prototype.format = function() {
 
 var swt = document.getElementById("switch");
 
-const url = "http://127.0.0.1:5000/api/data"
+const url = "http://192.168.1.25:5000/api/data"
 
 swt.onclick = function() {
 	var state = this.checked ? 1 : 0;

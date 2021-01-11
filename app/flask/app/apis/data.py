@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app import r
 import time
+import math
 
 data = Blueprint('data', __name__)
 
@@ -71,7 +72,6 @@ def rotation():
     if data == -1:
         return jsonify(success=False), 500
     try:
-        import math
         for i, _ in enumerate(data):
             if math.isnan(_):
                 data[i] = 0
@@ -81,7 +81,7 @@ def rotation():
         print(f'error:{e}\nmsg:{data}')
         pass
     else:
-        return jsonify(position=[x, y, z], success=True), 200
+        return jsonify(position=[math.radians(x), math.radians(y), math.radians(z)], success=True), 200
     return jsonify(success=False), 500
 
 @data.route('/api/data/loadmodel')
@@ -93,40 +93,53 @@ def load_model():
     r.set('_model', reuest.data)
     return jsonify(success=True), 200
 
-'''
-from itertools import count
-ct = count()
-cy = count()
-cp = count()
-cr = count()
-'''
-
 @data.route('/api/data/getpidtdata', methods=['GET', 'POST'])
 def get_pid_t_data():
-    data = c.get_pid_t_data()
-    if data == -1:
-        return jsonify(success=False), 500
-    return jsonify(points=data, success=True), 200
+    n = 5
+    rv = [None for  _ in range(n)]
+    for i in range(n):
+        data = c.get_pid_t_data()
+        if data == -1:
+            return jsonify(success=False), 500
+        rv[i] = data
+        time.sleep(0.1)
+    return jsonify(points=rv, success=True), 200
 
 
 @data.route('/api/data/getpidydata', methods=['GET', 'POST'])
 def get_pid_y_data():
-    data = c.get_pid_y_data()
-    if data == -1:
-        return jsonify(success=False), 500
-    return jsonify(points=data, success=True), 200
+    n = 5
+    rv = [None for _ in range(n)]
+    for i in range(n):
+        data = c.get_pid_y_data()
+        if data == -1:
+            return jsonify(success=False), 500
+        rv[i] = data
+        time.sleep(0.1)
+    return jsonify(points=rv, success=True), 200
 
 @data.route('/api/data/getpidpdata', methods=['GET', 'POST'])
 def get_pid_p_data():
-    data = c.get_pid_p_data()
-    if data == -1:
-        return jsonify(success=False), 500
-    return jsonify(points=data, success=True), 200
+    n = 20
+    rv = [None for _ in range(n-2)]
+    for i in range(n-2):
+        data = c.get_pid_p_data()
+        if data == -1:
+            return jsonify(success=False), 500
+        rv[i] = data
+        time.sleep(0.55/n)
+    return jsonify(points=rv, success=True), 200
 
 @data.route('/api/data/getpidrdata', methods=['GET', 'POST'])
 def get_pid_r_data():
-    data = c.get_pid_r_data()
-    if data == -1:
-        return jsonify(success=False), 500
-    return jsonify(points=data, success=True), 200
+    n = 20
+    rv = [None for _ in range(n-2)]
+    for i in range(n-2):
+        data = c.get_pid_r_data()
+        if data == -1:
+            return jsonify(success=False), 500
+        rv[i] = data
+        time.sleep(0.55/n)
+    #print(rv)
+    return jsonify(points=rv, success=True), 200
 

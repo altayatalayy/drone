@@ -1,17 +1,14 @@
 
-from collections import deque
 import time
 import sys
 import redis
 import atexit
 import time
 import numpy as np
-import threading
-import math
 
 import smbus
 from imusensor.MPU9250 import MPU9250
-from imusensor.filters import madgwick, kalman
+from imusensor.filters import madgwick
 
 prio_cmd = '_drone_prio_cmd'
 cmd = '_drone_cmd'
@@ -23,10 +20,7 @@ class Controller:
         from pid import DronePID
         from motors import BLDC
 
-        sensorfusion = kalman.Kalman()#madgwick.Madgwick(0.023)
-        sensorfusion.roll = 0
-        sensorfusion.pitch = 0
-        sensorfusion.yaw = 0
+        sensorfusion = madgwick.Madgwick(0.033)
         address = 0x68
         bus = smbus.SMBus(1)
         imu = MPU9250.MPU9250(bus, address)
@@ -34,8 +28,12 @@ class Controller:
 
         imu.loadCalibDataFromFile("/home/pi/projects/drone/app/flask/utils/calib.json")
 
+
+
         self.pids = DronePID()
         m = BLDC.from_csv()
+        m[0].min_value = 700
+        m[3].min_value = 700
         self.motors = [m[0], m[3], m[1], m[2]]
 
         self.sensor = imu#sensor
@@ -49,68 +47,73 @@ class Controller:
         t0 = time.time()
         time.sleep(0.5)
 
+        self.rotation = [0,0,0]
+        self.dist = 0
 
-        self._running = False
         self.start()
 
     def set_motor_speeds(self, speeds):
         if type(speeds) not in [list, int, float]:
             return
         if type(speeds) == list:
-            [m.set_speed(min(max(speed, 0), 60)) for m, speed in zip(self.motors, speeds)]
+            [m.set_speed(min(max(speed, 0), 100)) for m, speed in zip(self.motors, speeds)]
         else:
             [m.set_speed(speeds) for m in self.motors]
 
-    def update_filter(self, t0):
-        #for _ in range(10):
-        t1 = time.time()
-        dt = t1 - t0
-        t0 = t1
-        self.filter.computeAndUpdateRollPitchYaw(self.sensor.AccelVals[0], self.sensor.AccelVals[1], self.sensor.AccelVals[2], self.sensor.GyroVals[0], \
-                self.sensor.GyroVals[1], self.sensor.GyroVals[2], self.sensor.MagVals[0], self.sensor.MagVals[1], self.sensor.MagVals[2], dt)
-        return [-self.filter.pitch, self.filter.roll, self.filter.yaw]
-
     def run(self):
         time.sleep(0.1)
+        '''
+        while not self.filter._is_calibrated:
+            data = self.sensor.get_data()
+            if not data:
+                continue
+            acc = data[:3]
+            self.filter.calibrate(acc)
+        '''
+
         ts = time.time()
         t0 = ts
         n = 0
-        '''
-        self.set_motor_speeds(20)
-        time.sleep(2)
-        '''
-        try:
-            while self._running:
-                data = self.sensor.readSensor()#roll, pitch, yaw, dist
-                t2 = time.time()
-                rotation = self.update_filter(t0)
-                t0 = time.time()
 
-                dist = 18
-                self.q.append(np.array(rotation))
-                self.rotation = sum(self.q)/len(self.q)
+        while self._running:
+            data = self.sensor.readSensor()#roll, pitch, yaw, dist
+            '''
+            if not data:
+                time.sleep(0.01)
+                continue
+            '''
+            #data = data[::-1]
+            t2 = time.time()
+            for _ in range(10):
+                t1 = time.time()
+                dt = t1 - t0
+                t0 = t1
+                self.filter.updateRollPitchYaw(self.sensor.AccelVals[0], self.sensor.AccelVals[1], self.sensor.AccelVals[2], self.sensor.GyroVals[0], \
+                        self.sensor.GyroVals[1], self.sensor.GyroVals[2], self.sensor.MagVals[0], self.sensor.MagVals[1], self.sensor.MagVals[2], dt)
 
-                self.dist = dist
-                rotation = self.rotation[::-1]
-                dt = t0 - t2
 
-                if self._run_control:
-                    cmds = self.pids(dt, [dist, *rotation])
-                    n += 1
-                    if n%50 == 0:
-                        print(f'freq:{n / (time.time()-ts)}Hz')
-                    if not math.nan in cmds:
-                        if time.time() - ts > 2:
-                            self.set_motor_speeds(cmds)
-
-                if(dt < 1/120):
-                    time.sleep(1/120 - dt)
-
-        except Exception as e:
-            print(e)
-            self.stop()
-        finally:
-            print('stopped')
+            #acc, gyr = data[:3], data[3:6]
+            #rotation = self.filter.update(acc, np.array(gyr, dtype=float), dt)
+            dist = 18#data[6]
+            #print(f'data: {[round(d, 4) for d in data]}')
+            #print(round(dt, 5))
+            #print(dist)
+            self.rotation = [-self.filter.pitch, self.filter.roll, self.filter.yaw]
+            self.dist = dist
+            rotation = self.rotation[::-1]
+            dt = t1 - t2
+            cmds = self.pids(dt, [dist, *rotation])
+            #print(f'cmds: {cmds}\n')
+            n += 1
+            print(f'freq:{n / (time.time()-ts)}Hz')
+            if(dt < 1/35):
+                time.sleep(1/35 - dt)
+            import math
+            if not math.nan in cmds:
+                #print(f'\n')
+                #pass
+                self.set_motor_speeds(cmds)
+                #[m.set_speed(min(max(cmd, 0), 100)) for m, cmd in zip(self.motors, cmds)]
 
     def command_loop(self):
         def to_str(arr : list):
@@ -144,9 +147,12 @@ class Controller:
 
                 elif cmd == 'STOP':
                     self.stop()
+                    self.set_motor_speeds(0)
 
                 elif cmd == 'QUIT':
-                    self.quit()
+                    self.r.delete('_drone_cmd')
+                    self.stop()
+                    self.set_motor_speeds(0)
                     return
 
 
@@ -171,17 +177,17 @@ class Controller:
 
             elif cmd == 'get_pid_t_data':
                 data = self.pids.get_pid_data(0)
-                data.insert(0, next(ct))
+                data.insert(0, next(cr))
                 self.r.rpush('_pid_t_data', to_str(data))
 
             elif cmd == 'get_pid_y_data':
                 data = self.pids.get_pid_data(1)
-                data.insert(0, next(cy))
+                data.insert(0, next(cr))
                 self.r.rpush('_pid_y_data', to_str(data))
 
             elif cmd == 'get_pid_p_data':
                 data = self.pids.get_pid_data(2)
-                data.insert(0, next(cp))
+                data.insert(0, next(cr))
                 self.r.rpush('_pid_p_data', to_str(data))
 
             elif cmd == 'get_pid_r_data':
@@ -191,6 +197,7 @@ class Controller:
 
 
     def soft_stop(self):
+        self.stop()
         cur_speeds = [m.get_speed() for m in self.motors]
         cur_speeds = [c*0.5 for c in cur_speeds]
         self.set_motor_speeds(cur_speeds)
@@ -202,34 +209,20 @@ class Controller:
         self.set_motor_speeds(0)
 
     def start(self):
-        if not self._running:
-            self.rotation = [0,0,0]
-            self.q = deque(maxlen=9)
-            self.daemon = threading.Thread(target=self.run)
-            self.daemon.start()
-
-        self.r.delete(cmd)
         self._running = True
-        self._run_control = True
-        print('started')
+        import threading
+        self.daemon = threading.Thread(target=self.run)
+        self.daemon.start()
 
     def stop(self):
         if not self._running:
             return
-        self._run_control = False
-        self.soft_stop()
+        self._running = False
+        if self.daemon.is_alive():
+            self.daemon.join()
 
     def quit(self):
-        self.r.delete('_drone_cmd')
-        self.stop()
-        self._running = False
-        try:
-            if self.daemon.is_alive():
-                self.daemon.join()
-        except Exception as e:
-            print(e)
-        finally:
-            self.set_motor_speeds(0)
+        pass
 
 
 

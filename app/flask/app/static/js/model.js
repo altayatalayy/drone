@@ -58,19 +58,19 @@ const Http = new XMLHttpRequest();
 function animate(){
 	setTimeout( function() {
 		requestAnimationFrame(animate);
-	}, 1000 / 30 );
+	}, 1000 / 10 );
 
 	var x, y, z;
-	const url = "http://192.168.1.31:5000/api/data/getrotation"
+	const url = "http://192.168.1.25:5000/api/data/getrotation"
 	//const url = "http://127.0.0.1:5000/api/data/getrotation"
 	Http.open("GET", url)
 	Http.send()
 	Http.onreadystatechange = function(){
 		if(Http.readyState == 4){
 			var a = JSON.parse(Http.responseText).position;
-			x = (a[0] % 360);
-			y = (a[1] % 360);
-			z = (a[2] % 360);
+			x = a[0];
+			y = a[1];
+			z = a[2];
 			object.rotation.set(x, y, z - 3.14/4);
 		}
 	}

@@ -37,6 +37,8 @@ class BLDC:
         if not (speed >= 0 and speed <= 100) and not speed == -100:
             raise ValueError(f'speed must be an int betwenn -100 and 100')
         self.speed = int(self.min_value + (self.max_value - self.min_value) * (speed / 100))
+        if speed == -100:
+            self.speed = 0
         self.pi.set_servo_pulsewidth(self.pin, self.speed)
 
     def get_speed(self):
@@ -80,4 +82,9 @@ class BLDC:
 
 if __name__ == '__main__':
     import argparse
+    motors = BLDC.from_csv()
+    def f(speed):
+        [m.set_speed(speed) for m in motors]
+
+    f(0)
 

@@ -7,7 +7,7 @@ from app.models import User
 
 main = Blueprint('main', __name__)
 
-host = 'http://192.168.1.31:5000'
+host = 'http://192.168.1.25:5000'
 
 @main.route('/home', methods=['GET', 'POST'])
 def home():
@@ -16,6 +16,7 @@ def home():
 
 @main.route('/pidplots', methods=['GET', 'POST'])
 def pid_tunning():
+    '''
     s = r.get('plot_script')
     d = r.get('plot_div')
     if s and r:
@@ -24,11 +25,12 @@ def pid_tunning():
         while r.llen('plot_cdn') > 0:
             cdn_js.append(r.lpop('plot_cdn').decode('utf-8'))
     else:
-        script, div, cdn_js = plot()
-        r.set('plot_script', script)
-        r.set('plot_div', div)
-        for cdn in cdn_js:
-            r.rpush('plot_cdn', cdn)
+        '''
+    script, div, cdn_js = plot()
+    r.set('plot_script', script)
+    r.set('plot_div', div)
+        #for cdn in cdn_js:
+            #r.rpush('plot_cdn', cdn)
     return render_template('pid_tunning.html', script=script, div=div, cdn_js=cdn_js)
 
 
@@ -87,18 +89,20 @@ def plot():
     const result = {x:[], ref:[], v:[], e:[], rv:[]}
     const pts = cb_data.response.points
 
-    result.x.push(pts[0])
-    result.ref.push(pts[1])
-    result.v.push(pts[2])
-    result.e.push(pts[3])
-    result.rv.push(pts[4])
+    for (let i=0; i<pts.length; i++) {
+        result.x.push(pts[i][0])
+        result.ref.push(pts[i][1])
+        result.v.push(pts[i][2])
+        result.e.push(pts[i][3])
+        result.rv.push(pts[i][4])
+    }
     return result
     """)
 
-    pid_t_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_t_data")}', polling_interval=1500, adapter=pid_adapter, mode='append', max_size=500)
-    pid_y_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_y_data")}', polling_interval=450, adapter=pid_adapter, mode='append', max_size=1024)
-    pid_p_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_p_data")}', polling_interval=150, adapter=pid_adapter, mode='append', max_size=1024)
-    pid_r_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_r_data")}', polling_interval=150, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_t_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_t_data")}', polling_interval=4500, adapter=pid_adapter, mode='append', max_size=500)
+    pid_y_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_y_data")}', polling_interval=4500, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_p_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_p_data")}', polling_interval=800, adapter=pid_adapter, mode='append', max_size=1024)
+    pid_r_source = AjaxDataSource(data_url=f'{host}{url_for("data.get_pid_r_data")}', polling_interval=800, adapter=pid_adapter, mode='append', max_size=1024)
 
     pid_t_plot = figure(title='dist', output_backend='webgl')
     pid_y_plot = figure(title='yaw', output_backend='webgl')
