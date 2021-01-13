@@ -25,6 +25,12 @@ class MyController(Controller):
         print(f'down {val}')
         c.set_throttle(val)
 
+    def on_L2_release(self, *args):
+        c.increase_gain(1.1)
+
+    def on_R2_release(self, *args):
+        c.increase_gain(0.9)#decrease gain
+
     def on_square_press(self):
         ''' x '''
         c.stop()

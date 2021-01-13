@@ -37,7 +37,7 @@ class PID:
         #print(f'rv: {rv}')
         return rv
 
-    def set_ref(ref):
+    def set_ref(self, ref):
         self.ref = ref
 
 class DronePID:
@@ -58,10 +58,11 @@ class DronePID:
         self.throttle = 0
         dist.calc = self.get_throttle
         self.pids = [dist, yaw, pitch, roll]
+        self.gain = 1
 
     def __call__(self, dt, val:list):
         #print(val)
-        val = [pid(v, dt) for pid, v in zip(self.pids, val)]
+        val = [self.gain * pid(v, dt) for pid, v in zip(self.pids, val)]
         #[print(f'pid{i} output: {v}') for i, v in enumerate(val)]
         return self.mma(val)
 
@@ -74,6 +75,9 @@ class DronePID:
         rv.append(t - y - p + r)#back right
         rv.append(t + y - p - r)#back left
         return rv
+
+    def increase_gain(self, val):
+        self.gain = self.gain * val
 
     def get_pid_data(self, idx):
         p = self.pids[idx]

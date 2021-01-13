@@ -167,6 +167,18 @@ class Controller:
                 val = cmd[9:]
                 self.pids.set_throttle(float(val))
 
+            elif cmd[:4] == 'gain':
+                val = float(cmd[5:])
+                self.pids.increase_gain(val)
+
+            elif cmd[:4] == 'roll':
+                val = float(cmd[5:])
+                self.pids.pids[-1].set_ref(val)
+
+            elif cmd[:5] == 'pitch':
+                val = float(cmd[6:])
+                self.pids.pids[-2].set_ref(val)
+
             elif cmd == 'get_rotation':
                 self.r.rpush('_rotation', to_str(self.rotation))
 
@@ -274,6 +286,15 @@ class ControllerApi:
 
     def set_throttle(self, val):
         self.push(cmd, f'throttle:{val:.1f}')
+
+    def increase_gain(self, val):
+        self.push(cmd, f'gain:{val:.2f}')
+
+    def set_roll(self, val):
+        self.push(cmd, f'roll:{val:.1f}')
+
+    def set_pitch(self, val):
+        self.push(cmd, f'pitch:{val:.1f}')
 
     def get_motor_speeds(self):
         self.push(cmd, 'get_motor_speeds')
