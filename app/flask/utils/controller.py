@@ -61,11 +61,8 @@ class Controller:
         else:
             [m.set_speed(speeds) for m in self.motors]
 
-    def update_filter(self, t0):
+    def update_filter(self, dt):
         #for _ in range(10):
-        t1 = time.time()
-        dt = t1 - t0
-        t0 = t1
         self.filter.computeAndUpdateRollPitchYaw(self.sensor.AccelVals[0], self.sensor.AccelVals[1], self.sensor.AccelVals[2], self.sensor.GyroVals[0], \
                 self.sensor.GyroVals[1], self.sensor.GyroVals[2], self.sensor.MagVals[0], self.sensor.MagVals[1], self.sensor.MagVals[2], dt)
         return [-self.filter.pitch, self.filter.roll, self.filter.yaw]
@@ -81,10 +78,11 @@ class Controller:
         '''
         try:
             while self._running:
+                ti = time.time()
                 data = self.sensor.readSensor()#roll, pitch, yaw, dist
-                t2 = time.time()
-                rotation = self.update_filter(t0)
+                dt = time.time() - t0
                 t0 = time.time()
+                rotation = self.update_filter(dt)
 
                 dist = 18
                 self.q.append(np.array(rotation))
@@ -92,25 +90,27 @@ class Controller:
 
                 self.dist = dist
                 rotation = self.rotation[::-1]
-                dt = t0 - t2
 
+                cmds = self.pids(dt, [dist, *rotation])
+                n += 1
+                if n%1500 == 0:
+                    print(f'freq:{n / (time.time()-ts)}Hz')
+                    #print(dt)
+                    #print(dt < 1/110)
                 if self._run_control:
-                    cmds = self.pids(dt, [dist, *rotation])
-                    n += 1
-                    if n%50 == 0:
-                        print(f'freq:{n / (time.time()-ts)}Hz')
                     if not math.nan in cmds:
                         if time.time() - ts > 2:
                             self.set_motor_speeds(cmds)
 
-                if(dt < 1/120):
-                    time.sleep(1/120 - dt)
+                tf = time.time()
+                if(tf-ti < 1/103):
+                    time.sleep(1/103 - (tf-ti))
 
         except Exception as e:
             print(e)
             self.stop()
         finally:
-            print('stopped')
+            print('quit')
 
     def command_loop(self):
         def to_str(arr : list):
@@ -152,7 +152,7 @@ class Controller:
 
 
             if self.r.llen('_drone_cmd') == 0:
-                time.sleep(0.05)
+                time.sleep(0.005)
                 continue
 
             cmd = self.r.lpop('_drone_cmd').decode('utf-8')
@@ -162,6 +162,10 @@ class Controller:
             if cmd == 'get_motor_speeds':
                 speeds = [m.get_speed() for m in self.motors]
                 self.r.rpush('_motor_speeds', to_str(speeds))
+
+            elif cmd[:8] == 'throttle':
+                val = cmd[9:]
+                self.pids.set_throttle(float(val))
 
             elif cmd == 'get_rotation':
                 self.r.rpush('_rotation', to_str(self.rotation))
@@ -191,20 +195,22 @@ class Controller:
 
 
     def soft_stop(self):
+        print('softstop-begin')
         cur_speeds = [m.get_speed() for m in self.motors]
-        cur_speeds = [c*0.5 for c in cur_speeds]
+        cur_speeds = [c*0.75 for c in cur_speeds]
         self.set_motor_speeds(cur_speeds)
-        time.sleep(0.3)
+        time.sleep(0.6)
         cur_speeds = [m.get_speed() for m in self.motors]
-        cur_speeds = [c*0.5 for c in cur_speeds]
+        cur_speeds = [c*0.6 for c in cur_speeds]
         self.set_motor_speeds(cur_speeds)
-        time.sleep(0.2)
+        time.sleep(0.6)
         self.set_motor_speeds(0)
+        print('softstop-end')
 
     def start(self):
         if not self._running:
             self.rotation = [0,0,0]
-            self.q = deque(maxlen=9)
+            self.q = deque(maxlen=6)
             self.daemon = threading.Thread(target=self.run)
             self.daemon.start()
 
@@ -212,11 +218,22 @@ class Controller:
         self._running = True
         self._run_control = True
         print('started')
+        '''
+        self.set_motor_speeds(5)
+        time.sleep(0.3)
+        self.set_motor_speeds(10)
+        time.sleep(0.6)
+        self.set_motor_speeds(25)
+        time.sleep(1)
+        self.set_motor_speeds(30)
+        time.sleep(0.8)
+        '''
 
     def stop(self):
         if not self._running:
             return
         self._run_control = False
+        print('stopped')
         self.soft_stop()
 
     def quit(self):
@@ -255,6 +272,8 @@ class ControllerApi:
         else:
             raise TimeoutError('no response from server')
 
+    def set_throttle(self, val):
+        self.push(cmd, f'throttle:{val:.1f}')
 
     def get_motor_speeds(self):
         self.push(cmd, 'get_motor_speeds')
